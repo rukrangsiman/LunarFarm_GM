@@ -112,13 +112,13 @@
   const { useState, useMemo, useEffect } = React;
 
       // -------- Mock Data --------
-      const batches = [
-        { id:'A-01', species:'Lettuce', stage:'mature',  start:'2025-08-20', images: 9, img: 'image/lettuce.jpg' },
-        { id:'B-07', species:'Spinach', stage:'seedling', start:'2025-08-27', images: 6, img: 'image/Spinach.jpg' },
-        { id:'C-03', species:'Kale',    stage:'growing',  start:'2025-08-22', images: 7, img: 'image/Kale.jpg' }
+      let batches = [
+        { id:'A-01', species:'Lettuce', stage:'mature',  start:'2025-08-20', images: 9, img: 'image/lettuce.jpg', timelapse: ['Timelapse/Lettuce/L1.png','Timelapse/Lettuce/L2.png','Timelapse/Lettuce/L3.png','Timelapse/Lettuce/L4.png','Timelapse/Lettuce/L5.png','Timelapse/Lettuce/L6.png','Timelapse/Lettuce/L7.png','Timelapse/Lettuce/L8.png','Timelapse/Lettuce/L9.png'] },
+        { id:'B-07', species:'Spinach', stage:'seedling', start:'2025-08-27', images: 6, img: 'image/Spinach.jpg', timelapse: ['Timelapse/Spinach/S1.png','Timelapse/Spinach/S2.png','Timelapse/Spinach/S3.png','Timelapse/Spinach/S4.png','Timelapse/Spinach/S5.png','Timelapse/Spinach/S6.png'] },
+        { id:'C-03', species:'Kale',    stage:'growing',  start:'2025-08-22', images: 7, img: 'image/Kale.jpg', timelapse: ['Timelapse/Kale/K1.png','Timelapse/Kale/K2.png','Timelapse/Kale/K3.png','Timelapse/Kale/K4.png','Timelapse/Kale/K5.png','Timelapse/Kale/K6.png','Timelapse/Kale/K7.png'] }
       ];
 
-      const metrics = {
+      let metrics = {
         'A-01': {
           height:[12,15,18,22,25,27,29],
           temp:[22,22,23,24,22,21,22],
@@ -136,10 +136,17 @@
         },
       };
 
-      const alerts = [
+      let alerts = [
         { id:1, batch:'A-01', ts:'2025-09-01 10:12', type:'High', metric:'EC', msg:'EC สูงกว่าค่ากำหนด 2.1 mS/cm', action:'ลดความเข้มข้นสารละลายเล็กน้อย' },
         { id:2, batch:'B-07', ts:'2025-09-02 08:15', type:'Low', metric:'Temp', msg:'อุณหภูมิต่ำ 17°C', action:'เพิ่มความร้อน +1°C' },
         { id:3, batch:'C-03', ts:'2025-09-03 14:20', type:'Trend', metric:'pH', msg:'pH ลดลงต่อเนื่อง 6.2→6.0', action:'ตรวจสอบสารละลายใหม่' },
+      ];
+
+      // -------- Mission Accounts --------
+      const missionAccounts = [
+        { username: 'astronaut01', password: 'lunar2025', role: 'Astronaut' },
+        { username: 'scientist01', password: 'research2025', role: 'Scientist' },
+        { username: 'commander01', password: 'mission2025', role: 'Commander' }
       ];
 
       // -------- Small helpers --------
@@ -268,15 +275,26 @@ function ModernChart({series, color='#60a5fa'}) {
         const [u,setU] = useState('');
         const [p,setP] = useState('');
         const [r,setR] = useState('Astronaut');
+        const [error, setError] = useState('');
+        const handleLogin = () => {
+          setError('');
+          const account = missionAccounts.find(acc => acc.username === u && acc.password === p);
+          if(!account) {
+            setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+            return;
+          }
+          onLogin({name: u, role: account.role, password: p});
+        };
         return React.createElement('div',{className:'login card'},
           React.createElement('div',{className:'title'},'User Login'),
+          error && React.createElement('div',{style:{padding:'12px 14px', borderRadius:'12px', background:'rgba(239,68,68,0.15)', border:'1.5px solid #ef4444', color:'#fecaca', marginBottom:'16px', fontSize:'14px', fontWeight:'600'}}, error),
           React.createElement('div',{className:'field'},
             React.createElement('label',null,'Username'),
             React.createElement('input',{
               placeholder:'ชื่อผู้ใช้',
               value:u,
               autoComplete:'username',
-              onChange:e=>setU(e.target.value)
+              onChange:e=>{setU(e.target.value); setError('');}
             })
           ),
           React.createElement('div',{className:'field'},
@@ -286,7 +304,7 @@ function ModernChart({series, color='#60a5fa'}) {
               placeholder:'รหัสผ่าน',
               value:p,
               autoComplete:'current-password',
-              onChange:e=>setP(e.target.value)
+              onChange:e=>{setP(e.target.value); setError('');}
             })
           ),
           React.createElement('div',{className:'field'},
@@ -299,9 +317,14 @@ function ModernChart({series, color='#60a5fa'}) {
           ),
           React.createElement('button',{
             className:'btn accent',
-            onClick:()=>onLogin({name:u||'ruk', role:r, password:p})
+            onClick:handleLogin
           },'เข้าสู่ระบบ'),
-          React.createElement('div',{className:'footer'},'* หน้านี้เป็น mock สำหรับ prototype เท่านั้น')
+          React.createElement('div',{className:'footer', style:{marginTop:'16px', fontSize:'12px', color:'var(--muted)', textAlign:'center'}},
+            React.createElement('div',null, 'บัญชีทดสอบ:'),
+            React.createElement('div',null, 'astronaut01 / lunar2025'),
+            React.createElement('div',null, 'scientist01 / research2025'),
+            React.createElement('div',null, 'commander01 / mission2025')
+          )
         )
       }
 
@@ -316,9 +339,13 @@ function ModernChart({series, color='#60a5fa'}) {
           }
         },[]);
         const [search, setSearch] = useState('');
-        const filteredBatches = batches.filter(b =>
-          b.id.toLowerCase().includes(search.toLowerCase()) ||
-          b.species.toLowerCase().includes(search.toLowerCase())
+        const [stageFilter, setStageFilter] = useState('all');
+        const stages = ['all', 'seedling', 'growing', 'mature'];
+        const stageLabels = {all: 'ทั้งหมด', seedling: 'ต้นกล้า', growing: 'โตเต็มที่', mature: 'เก็บเกี่ยว'};
+        const filteredBatches = batches.filter(b => 
+          (stageFilter === 'all' || b.stage === stageFilter) &&
+          (b.id.toLowerCase().includes(search.toLowerCase()) ||
+           b.species.toLowerCase().includes(search.toLowerCase()))
         );
         return React.createElement('div',{className:'app'},
           React.createElement('div',{className:'title'},'Lunar Farm Growth Monitoring'),
@@ -334,7 +361,7 @@ function ModernChart({series, color='#60a5fa'}) {
               onClick:()=>{ onLogout && onLogout(); }
             },'Logout')
           ),
-          React.createElement('div', {style:{margin:'0 0 18px 0', display:'flex', alignItems:'center', gap:'12px'}},
+          React.createElement('div', {style:{margin:'0 0 18px 0', display:'flex', alignItems:'center', gap:'12px', flexWrap:'wrap'}},
             React.createElement('input', {
               type: 'text',
               placeholder: 'ค้นหา Batch หรือชื่อพืช...',
@@ -342,6 +369,7 @@ function ModernChart({series, color='#60a5fa'}) {
               onChange: e => setSearch(e.target.value),
               style: {
                 flex:1,
+                minWidth:'200px',
                 padding:'12px 16px',
                 borderRadius:'12px',
                 border:'1.5px solid #1f2937',
@@ -351,7 +379,25 @@ function ModernChart({series, color='#60a5fa'}) {
                 outline:'none',
                 boxShadow:'0 1px 4px 0 rgba(96,165,250,0.07)'
               }
-            })
+            }),
+            React.createElement('select', {
+              value: stageFilter,
+              onChange: e => setStageFilter(e.target.value),
+              style: {
+                padding:'12px 14px',
+                borderRadius:'12px',
+                border:'1.5px solid #1f2937',
+                background:'#111827',
+                color:'var(--ink)',
+                fontSize:'15px',
+                fontWeight:'600',
+                cursor:'pointer',
+                outline:'none',
+                boxShadow:'0 1px 4px 0 rgba(96,165,250,0.07)'
+              }
+            },
+              stages.map(s => React.createElement('option', {key:s, value:s}, stageLabels[s]))
+            )
           ),
           React.createElement('div',{className:'grid kpi'},
             React.createElement(KPI,{label:'Germination', value:kpis.germination}),
@@ -399,10 +445,59 @@ function ModernChart({series, color='#60a5fa'}) {
       }
 
       function Batches({go}){
+        const [stageFilter, setStageFilter] = useState('all');
+        const [search, setSearch] = useState('');
+        const stages = ['all', 'seedling', 'growing', 'mature'];
+        const stageLabels = {all: 'ทั้งหมด', seedling: 'ต้นกล้า', growing: 'โตเต็มที่', mature: 'เก็บเกี่ยว'};
+        const filteredBatches = batches.filter(b =>
+          (stageFilter === 'all' || b.stage === stageFilter) &&
+          (b.id.toLowerCase().includes(search.toLowerCase()) || b.species.toLowerCase().includes(search.toLowerCase()))
+        );
         return React.createElement('div',{className:'app'},
           React.createElement('div',{className:'title'},'Batches'),
+          React.createElement('div', {style:{margin:'0 0 18px 0', display:'flex', alignItems:'center', gap:'12px', flexWrap:'wrap'}},
+            React.createElement('input', {
+              type: 'text',
+              placeholder: 'ค้นหา Batch หรือชื่อพืช...',
+              value: search,
+              onChange: e => setSearch(e.target.value),
+              style: {
+                flex:1,
+                minWidth:'200px',
+                padding:'10px 14px',
+                borderRadius:'12px',
+                border:'1.5px solid #1f2937',
+                background:'#111827',
+                color:'var(--ink)',
+                fontSize:'15px',
+                outline:'none',
+                boxShadow:'0 1px 4px 0 rgba(96,165,250,0.07)'
+              }
+            }),
+            React.createElement('label', {style:{fontSize:'14px', fontWeight:'600', color:'var(--muted)'}}, 'ค้นหาตามช่วงการเจริญเติบโต:'),
+            React.createElement('select', {
+              value: stageFilter,
+              onChange: e => setStageFilter(e.target.value),
+              style: {
+                padding:'10px 14px',
+                borderRadius:'12px',
+                border:'1.5px solid #1f2937',
+                background:'#111827',
+                color:'var(--ink)',
+                fontSize:'15px',
+                fontWeight:'600',
+                cursor:'pointer',
+                outline:'none',
+                boxShadow:'0 1px 4px 0 rgba(96,165,250,0.07)'
+              }
+            },
+              stages.map(s => React.createElement('option', {key:s, value:s}, stageLabels[s]))
+            )
+          ),
           React.createElement('div',{className:'list'},
-            batches.map(b=>React.createElement('div',{key:b.id,className:'row'},
+            filteredBatches.length === 0 ?
+              React.createElement('div',{className:'muted'},'ไม่พบข้อมูล') :
+              filteredBatches.map(b=>React.createElement('div',{key:b.id,className:'row'},
               React.createElement('div', {style:{display:'flex',alignItems:'center',gap:'16px'}},
                 b.img && React.createElement('img', {
                   src: b.img,
@@ -424,12 +519,70 @@ function ModernChart({series, color='#60a5fa'}) {
       }
 
       function BatchDetail({id, go}){
-        const m = metrics[id];
-        const batch = batches.find(x=>x.id===id);
+        const m = metrics[id] || {height:[], temp:[], ph:[]};
+        const batch = batches.find(x=>x.id===id) || null;
+        const [showTimeLapse, setShowTimeLapse] = useState(false);
+        const [timelapseIdx, setTimelapseIdx] = useState(0);
+        // date-range state (inputs expect YYYY-MM-DD)
+        const today = new Date();
+        const pad = n => n.toString().padStart(2,'0');
+        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        const N = Math.max(m.height.length, m.temp.length, m.ph.length);
+        // default: show full series range
+        const defaultTo = fmt(today);
+        const earliest = new Date(); earliest.setDate(today.getDate() - (N-1));
+        const defaultFrom = fmt(earliest);
+        const [dateFrom, setDateFrom] = useState(defaultFrom);
+        const [dateTo, setDateTo] = useState(defaultTo);
+
+        // build an array of dates that map to metric indices (assume last value = today)
+        const baseDates = [];
+        for(let i=0;i<N;i++){
+          const d = new Date();
+          d.setDate(today.getDate() - (N-1 - i));
+          baseDates.push(fmt(d));
+        }
+
+        // compute which indices fall into selected range
+        const fromDateObj = new Date(dateFrom + 'T00:00:00');
+        const toDateObj = new Date(dateTo + 'T23:59:59');
+        const indices = baseDates.map((ds,i)=>({ds, i})).filter(x=>{
+          const dd = new Date(x.ds + 'T12:00:00');
+          return dd >= fromDateObj && dd <= toDateObj;
+        }).map(x=>x.i);
+
+        // filtered series (preserve order)
+        const filteredHeight = indices.map(i=>m.height[i]).filter(v=>typeof v !== 'undefined');
+        const filteredPH = indices.map(i=>m.ph[i]).filter(v=>typeof v !== 'undefined');
+        const filteredTemp = indices.map(i=>m.temp[i]).filter(v=>typeof v !== 'undefined');
+
+        // KPIs over selected range
+        const maxHeight = filteredHeight.length? Math.max(...filteredHeight) : (m.height.length? Math.max(...m.height): 0);
+        const lastPH = filteredPH.length? filteredPH[filteredPH.length-1] : (m.ph.length? m.ph[m.ph.length-1] : '-');
+        const avgTemp = filteredTemp.length? Math.round(filteredTemp.reduce((a,b)=>a+b,0)/filteredTemp.length) : (m.temp.length? Math.round(m.temp.reduce((a,b)=>a+b,0)/m.temp.length) : '-');
+
         return React.createElement('div',{className:'app'},
           React.createElement('div',{className:'title'},'Batch Detail — ' + id),
+
+          // date range controls
+          React.createElement('div',{className:'card', style:{marginBottom:18}},
+            React.createElement('div',{style:{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center'}},
+              React.createElement('div', {style:{minWidth:180}},
+                React.createElement('label',{className:'muted'}, 'ช่วงวันที่ (จาก)'),
+                React.createElement('input', {type:'date', value:dateFrom, onChange:e=>setDateFrom(e.target.value), style:{width:'100%'}})
+              ),
+              React.createElement('div', {style:{minWidth:180}},
+                React.createElement('label',{className:'muted'}, 'ถึง'),
+                React.createElement('input', {type:'date', value:dateTo, onChange:e=>setDateTo(e.target.value), style:{width:'100%'}})
+              ),
+              React.createElement('div', {style:{display:'flex',gap:8,alignItems:'flex-end'}},
+                React.createElement('button',{className:'btn', onClick:()=>{ setDateFrom(defaultFrom); setDateTo(defaultTo); }},'Reset')
+              )
+            )
+          ),
+
           batch && batch.img && React.createElement('div', {
-            style: {display:'flex',justifyContent:'center',alignItems:'center',margin:'0 0 24px 0'}
+            style: {display:'flex',justifyContent:'center',alignItems:'center',margin:'0 0 16px 0'}
           },
             React.createElement('img', {
               src: batch.img,
@@ -437,40 +590,111 @@ function ModernChart({series, color='#60a5fa'}) {
               style: {width:'380px',height:'260px',objectFit:'cover',borderRadius:'22px',border:'2.5px solid #334155',background:'#222',boxShadow:'0 4px 32px 0 rgba(34,197,94,0.13)'}
             })
           ),
+
           React.createElement('div',{className:'grid kpi'},
-            React.createElement(KPI,{label:'สูงสุด (cm)', value: Math.max(...m.height)}),
-            React.createElement(KPI,{label:'pH ล่าสุด', value: m.ph[m.ph.length-1]}),
-            React.createElement(KPI,{label:'อุณหภูมิเฉลี่ย (°C)', value: Math.round(m.temp.reduce((a,b)=>a+b,0)/m.temp.length)}),
+            React.createElement(KPI,{label:'สูงสุด (cm)', value: maxHeight}),
+            React.createElement(KPI,{label:'pH ล่าสุด', value: lastPH}),
+            React.createElement(KPI,{label:'อุณหภูมิเฉลี่ย (°C)', value: avgTemp}),
             React.createElement(KPI,{label:'รูป Time‑lapse', value: (batch||{images:0}).images })
           ),
+
           React.createElement('div',{className:'cols'},
             React.createElement('div',{className:'card'},
               React.createElement('div',{className:'sub'},'ความสูงของต้น (cm)'),
-              React.createElement(ModernChart,{series: m.height, color:'#60a5fa'})
+              React.createElement(ModernChart,{series: filteredHeight.length? filteredHeight : m.height, color:'#60a5fa'})
             ),
             React.createElement('div',{className:'card'},
               React.createElement('div',{className:'sub'},'pH'),
-              React.createElement(ModernChart,{series: m.ph, color:'#22c55e'})
+              React.createElement(ModernChart,{series: filteredPH.length? filteredPH : m.ph, color:'#22c55e'})
             )
           ),
+
+          // Time-lapse Gallery Modal
+          showTimeLapse && React.createElement('div',{style:{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}},
+            React.createElement('div',{style:{background:'#0f172a',borderRadius:'24px',padding:'24px',maxWidth:'600px',width:'90%',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',display:'flex',flexDirection:'column',gap:16}},
+              React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+                React.createElement('div',{style:{fontSize:'20px',fontWeight:'700',color:'var(--ink)'}},'Time-lapse — ' + id),
+                React.createElement('button',{style:{background:'#ef4444',border:'none',borderRadius:'50%',width:'36px',height:'36px',cursor:'pointer',fontSize:'20px',color:'#fff',fontWeight:'700'},onClick:()=>setShowTimeLapse(false)},'×')
+              ),
+              React.createElement('div',{style:{display:'flex',justifyContent:'center',alignItems:'center',background:'#111827',borderRadius:'16px',padding:'16px',minHeight:'300px'}},
+                batch && batch.timelapse && batch.timelapse.length > 0 ? 
+                  React.createElement('img',{src:batch.timelapse[timelapseIdx],alt:batch.species,style:{maxWidth:'100%',maxHeight:'280px',borderRadius:'12px'}}) :
+                  React.createElement('div',{className:'muted'},'ไม่พบรูป')
+              ),
+              React.createElement('div',{style:{display:'flex',gap:8,justifyContent:'space-between',alignItems:'center'}},
+                React.createElement('button',{className:'btn',onClick:()=>setTimelapseIdx(Math.max(0,timelapseIdx-1)),disabled:timelapseIdx===0},'←'),
+                React.createElement('div',{style:{flex:1,textAlign:'center',color:'var(--muted)',fontSize:'14px'}},'ภาพที่ ' + (timelapseIdx+1) + ' จาก ' + (batch?.timelapse?.length||0)),
+                React.createElement('button',{className:'btn',onClick:()=>setTimelapseIdx(Math.min((batch?.timelapse?.length||0)-1,timelapseIdx+1)),disabled:timelapseIdx===(batch?.timelapse?.length||0)-1},'→')
+              ),
+              React.createElement('button',{className:'btn accent',onClick:()=>setShowTimeLapse(false),style:{width:'100%'}},'ปิด')
+            )
+          ),
+
           React.createElement('div',{className:'nav'},
+            React.createElement('button',{className:'btn',onClick:()=>setShowTimeLapse(true),style:{background:'#60a5fa',color:'#fff'}},'📷 ดูภาพ Time-lapse (' + (batch?.images||0) + ' ภาพ)'),
             React.createElement('button',{className:'btn',onClick:()=>go('batches')},'ย้อนกลับ')
           )
         )
       }
 
       function Alerts({go}){
+        const [levelFilter, setLevelFilter] = React.useState({High: true, Low: true, Trend: true});
+        const filteredAlerts = alerts.filter(a => levelFilter[a.type]);
+        
         return React.createElement('div',{className:'app'},
           React.createElement('div',{className:'title'},'Alerts'),
-          React.createElement('div',{className:'list'},
-            alerts.map(a=>React.createElement('div',{key:a.id,className:'row'},
-              React.createElement('div',null,
-                React.createElement('div',null, a.msg),
-                React.createElement('div',{className:'muted'}, a.ts + ' • Batch ' + a.batch + ' • Metric ' + a.metric)
+          
+          React.createElement('div',{className:'card', style:{marginBottom:18}},
+            React.createElement('div',{style:{display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}},
+              React.createElement('label',{style:{fontSize:'14px',fontWeight:'600',color:'var(--muted)'}}, 'ระดับการแจ้งเตือน:'),
+              React.createElement('div',{style:{display:'flex',gap:12,alignItems:'center'}},
+                React.createElement('label',{style:{display:'flex',alignItems:'center',gap:6,cursor:'pointer'}},
+                  React.createElement('input',{
+                    type:'checkbox',
+                    checked:levelFilter.High,
+                    onChange:e=>setLevelFilter({...levelFilter, High:e.target.checked}),
+                    style:{cursor:'pointer'}
+                  }),
+                  React.createElement('span',{style:{color:'#fecaca',fontWeight:'600'}},'🔴 สูง (High)')
+                )
               ),
-              React.createElement(Tag,{tone: a.type==='High'?'danger':(a.type==='Low'?'warn':'')}, a.type)
-            ))
+              React.createElement('div',{style:{display:'flex',gap:12,alignItems:'center'}},
+                React.createElement('label',{style:{display:'flex',alignItems:'center',gap:6,cursor:'pointer'}},
+                  React.createElement('input',{
+                    type:'checkbox',
+                    checked:levelFilter.Low,
+                    onChange:e=>setLevelFilter({...levelFilter, Low:e.target.checked}),
+                    style:{cursor:'pointer'}
+                  }),
+                  React.createElement('span',{style:{color:'#fde68a',fontWeight:'600'}},'🟡 ต่ำ (Low)')
+                )
+              ),
+              React.createElement('div',{style:{display:'flex',gap:12,alignItems:'center'}},
+                React.createElement('label',{style:{display:'flex',alignItems:'center',gap:6,cursor:'pointer'}},
+                  React.createElement('input',{
+                    type:'checkbox',
+                    checked:levelFilter.Trend,
+                    onChange:e=>setLevelFilter({...levelFilter, Trend:e.target.checked}),
+                    style:{cursor:'pointer'}
+                  }),
+                  React.createElement('span',{style:{color:'#94a3b8',fontWeight:'600'}},'⚪ Trend')
+                )
+              )
+            )
           ),
+          
+          React.createElement('div',{className:'list'},
+            filteredAlerts.length === 0 ?
+              React.createElement('div',{className:'muted'},'ไม่พบข้อมูลการแจ้งเตือน') :
+              filteredAlerts.map(a=>React.createElement('div',{key:a.id,className:'row'},
+                React.createElement('div',null,
+                  React.createElement('div',null, a.msg),
+                  React.createElement('div',{className:'muted'}, a.ts + ' • Batch ' + a.batch + ' • Metric ' + a.metric)
+                ),
+                React.createElement(Tag,{tone: a.type==='High'?'danger':(a.type==='Low'?'warn':'')}, a.type)
+              ))
+          ),
+          
           React.createElement('div',{className:'nav'},
             React.createElement('button',{className:'btn',onClick:()=>go('dashboard')},'กลับ Dashboard')
           )
@@ -484,21 +708,167 @@ function ModernChart({series, color='#60a5fa'}) {
         const [batch, setBatch] = React.useState('all');
         const [exporting, setExporting] = React.useState(false);
         const [downloadUrl, setDownloadUrl] = React.useState(null);
-        const batchOptions = [{id:'all', name:'ทั้งหมด'}].concat(batches.map(b=>({id:b.id, name:b.id+' - '+b.species})));
+        const [search, setSearch] = React.useState('');
+        const [stageFilter, setStageFilter] = React.useState('all');
+        const stages = ['all', 'seedling', 'growing', 'mature'];
+        const stageLabels = {all: 'ทั้งหมด', seedling: 'ต้นกล้า', growing: 'โตเต็มที่', mature: 'เก็บเกี่ยว'};
+        // Historical search state: which metric to inspect across batches
+        const [histMetric, setHistMetric] = React.useState('temp'); // 'height' | 'temp' | 'ph'
+        // compute per-batch historical stats for the selected metric + date range
+        function computeHistoricalStats(metricKey){
+          const matching = batches.filter(b =>
+            (stageFilter === 'all' || b.stage === stageFilter) &&
+            (b.id.toLowerCase().includes(search.toLowerCase()) || b.species.toLowerCase().includes(search.toLowerCase()))
+          );
+          const out = matching.map(b => {
+            const m = metrics[b.id] || {};
+            const arr = getValuesInRange(m[metricKey] || [], dateFrom, dateTo);
+            const avg = arr.length ? Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10 : '-';
+            const min = arr.length ? Math.min(...arr) : '-';
+            const max = arr.length ? Math.max(...arr) : '-';
+            return { batchId: b.id, species: b.species, count: arr.length, avg, min, max, values: arr };
+          });
+          return out;
+        }
+
+        // batch options respect the search + stage filter (keep 'all')
+        const batchOptions = [{id:'all', name:'ทั้งหมด'}].concat(
+          batches
+            .filter(b =>
+              (stageFilter === 'all' || b.stage === stageFilter) &&
+              (b.id.toLowerCase().includes(search.toLowerCase()) || b.species.toLowerCase().includes(search.toLowerCase()))
+            )
+            .map(b=>({id:b.id, name:b.id+' - '+b.species}))
+        );
+
         // Filtered data (mock logic)
         const filteredAlerts = alerts.filter(a=>(batch==='all'||a.batch===batch));
         const filteredMetrics = batch==='all'?metrics['A-01']:metrics[batch]||metrics['A-01'];
+        const [dataMsg, setDataMsg] = React.useState('');
+        const [dataVersion, setDataVersion] = React.useState(0); // bump to re-render after loading
+
+        function validateData(obj){
+          if(!obj) return false;
+          if(obj.batches && !Array.isArray(obj.batches)) return false;
+          if(obj.metrics && typeof obj.metrics !== 'object') return false;
+          if(obj.alerts && !Array.isArray(obj.alerts)) return false;
+          return true;
+        }
+
+        function handleFileUpload(file){
+          const reader = new FileReader();
+          reader.onload = e => {
+            try{
+              const parsed = JSON.parse(e.target.result);
+              if(!validateData(parsed)){
+                setDataMsg('ไฟล์ JSON รูปแบบไม่ถูกต้อง — ต้องมี keys: batches[], metrics{}, alerts[] (optional)');
+                return;
+              }
+              if(parsed.batches) batches = parsed.batches;
+              if(parsed.metrics) metrics = parsed.metrics;
+              if(parsed.alerts) alerts = parsed.alerts;
+              setDataMsg('โหลดข้อมูลสำเร็จ');
+              setDataVersion(v=>v+1);
+            }catch(err){
+              setDataMsg('ไม่สามารถอ่านไฟล์: ' + err.message);
+            }
+          };
+          reader.readAsText(file);
+        }
+
+        function onFileInputChange(e){
+          const f = e.target.files && e.target.files[0];
+          if(f) handleFileUpload(f);
+        }
+
+        // ---- helpers to map series indices to dates (assume last sample == today) ----
+        const today = new Date();
+        const pad = n => n.toString().padStart(2,'0');
+        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+        function buildBaseDatesForSeries(len){
+          const arr = [];
+          for(let i=0;i<len;i++){
+            const d = new Date();
+            d.setDate(today.getDate() - (len-1 - i));
+            arr.push(fmt(d));
+          }
+          return arr;
+        }
+
+        function getValuesInRange(valuesArray, dateFromStr, dateToStr){
+          if(!valuesArray || valuesArray.length===0) return [];
+          const base = buildBaseDatesForSeries(valuesArray.length);
+          const fromObj = new Date(dateFromStr + 'T00:00:00');
+          const toObj = new Date(dateToStr + 'T23:59:59');
+          const out = [];
+          base.forEach((ds,i)=>{
+            const dd = new Date(ds + 'T12:00:00');
+            if(dd >= fromObj && dd <= toObj){
+              if(typeof valuesArray[i] !== 'undefined') out.push(valuesArray[i]);
+            }
+          });
+          return out;
+        }
+
+        // ---- compute aggregated values (single batch or across batches) ----
+        const allHeights = [];
+        const allTemps = [];
+        const allPHs = [];
+
+        if(batch === 'all'){
+          // aggregate across all batches that match the current search+stage filters
+          const matching = batches.filter(b =>
+            (stageFilter === 'all' || b.stage === stageFilter) &&
+            (b.id.toLowerCase().includes(search.toLowerCase()) || b.species.toLowerCase().includes(search.toLowerCase()))
+          );
+          matching.forEach(b => {
+            const m = metrics[b.id];
+            if(!m) return;
+            const hs = getValuesInRange(m.height, dateFrom, dateTo);
+            const ts = getValuesInRange(m.temp, dateFrom, dateTo);
+            const ps = getValuesInRange(m.ph, dateFrom, dateTo);
+            allHeights.push(...hs);
+            allTemps.push(...ts);
+            allPHs.push(...ps);
+          });
+        } else {
+          const m = metrics[batch] || {height:[], temp:[], ph:[]};
+          allHeights.push(...getValuesInRange(m.height, dateFrom, dateTo));
+          allTemps.push(...getValuesInRange(m.temp, dateFrom, dateTo));
+          allPHs.push(...getValuesInRange(m.ph, dateFrom, dateTo));
+        }
+
+        const avg = arr => arr.length ? Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10 : '-';
+        const avgHeight = avg(allHeights);
+        const avgTemp = avg(allTemps);
+        const avgPH = allPHs.length ? Math.round((allPHs.reduce((a,b)=>a+b,0)/allPHs.length)*10)/10 : '-';
+
         // Export PDF (mock)
         function exportPDF(){
           setExporting(true);
+          // create a small mock PDF blob and trigger download immediately
           setTimeout(()=>{
-            // mock PDF file as blob
-            const blob = new Blob([
-              `Weekly Report\nช่วงวันที่: ${dateFrom} ถึง ${dateTo}\nBatch: ${batch}`
-            ], {type:'application/pdf'});
-            setDownloadUrl(URL.createObjectURL(blob));
-            setExporting(false);
-          }, 1200);
+            try{
+              const content = `Weekly Report\nช่วงวันที่: ${dateFrom} ถึง ${dateTo}\nBatch: ${batch}\n\nAvg Height: ${avgHeight} cm\nAvg Temp: ${avgTemp} °C\nAvg pH: ${avgPH}`;
+              // simple PDF-like blob (for prototype). For a real PDF, integrate a library (jsPDF)
+              const blob = new Blob([content], {type:'application/pdf'});
+              const url = URL.createObjectURL(blob);
+              // programmatically download
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `WeeklyReport_${dateFrom}_${dateTo}.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              URL.revokeObjectURL(url);
+              setDownloadUrl(null);
+            }catch(err){
+              console.error('exportPDF error', err);
+            }finally{
+              setExporting(false);
+            }
+          }, 800);
         }
         // Progress mock
         const resourceUsed = 1.2, resourceTarget = 1.0;
@@ -569,10 +939,62 @@ function ModernChart({series, color='#60a5fa'}) {
             React.createElement('div',null,'สรุปสถานะการปลูกประจำสัปดาห์: ทุก batch มีการเจริญเติบโตดี ไม่มีปัญหารุนแรง')
           ),
           React.createElement('div',{className:'grid kpi'},
-            React.createElement(KPI,{label:'Germination', value:'96%'}),
-            React.createElement(KPI,{label:'Avg Growth Rate', value:'2.1 cm/day'}),
-            React.createElement(KPI,{label:'Survival', value:'93%'}),
-            React.createElement(KPI,{label:'Resource Use', value:'Water 1.2 L/kg'})
+            React.createElement(KPI,{label:'Avg Height (cm)', value: avgHeight}),
+            React.createElement(KPI,{label:'Avg Temp (°C)', value: avgTemp}),
+            React.createElement(KPI,{label:'Avg pH', value: avgPH})
+          ),
+          // Historical Search card: query metric values across matching batches in selected date range
+          React.createElement('div',{className:'card', style:{marginBottom:18}},
+            React.createElement('div',{className:'sub'},'Historical Search — ตรวจสอบย้อนหลัง'),
+            React.createElement('div',{style:{display:'flex',gap:12,flexWrap:'wrap',alignItems:'flex-end',marginTop:8}},
+              React.createElement('div',{style:{minWidth:160}},
+                React.createElement('label',{className:'muted'},'Metric'),
+                React.createElement('select',{value:histMetric,onChange:e=>setHistMetric(e.target.value), style:{marginTop:6}},
+                  React.createElement('option',{value:'height'},'Height (cm)'),
+                  React.createElement('option',{value:'temp'},'Temperature (°C)'),
+                  React.createElement('option',{value:'ph'},'pH')
+                )
+              ),
+              React.createElement('div',{style:{minWidth:210}},
+                React.createElement('label',{className:'muted'}, 'ช่วงวันที่'),
+                React.createElement('div',{className:'flex', style:{gap:8}},
+                  React.createElement('input',{type:'date', value:dateFrom, onChange:e=>setDateFrom(e.target.value)}),
+                  React.createElement('span',{className:'muted'},'ถึง'),
+                  React.createElement('input',{type:'date', value:dateTo, onChange:e=>setDateTo(e.target.value)})
+                )
+              ),
+              React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
+                React.createElement('button',{className:'btn', onClick:()=>{/* no-op; results recompute automatically */}},'ค้นหา')
+              )
+            ),
+            React.createElement('div',{style:{marginTop:12}},
+              (function(){
+                const histResults = computeHistoricalStats(histMetric);
+                if(!histResults || histResults.length===0) return React.createElement('div',{className:'muted'},'ไม่มีผลลัพธ์สำหรับช่วงวันที่และตัวกรองที่เลือก');
+                return React.createElement('table',{style:{width:'100%',borderCollapse:'collapse',fontSize:'14px'}},
+                  React.createElement('thead',null,
+                    React.createElement('tr',null,
+                      React.createElement('th',{style:{textAlign:'left',padding:'6px',color:'var(--muted)'}},'Batch'),
+                      React.createElement('th',{style:{textAlign:'left',padding:'6px',color:'var(--muted)'}},'Species'),
+                      React.createElement('th',{style:{textAlign:'right',padding:'6px',color:'var(--muted)'}},'Count'),
+                      React.createElement('th',{style:{textAlign:'right',padding:'6px',color:'var(--muted)'}},'Avg'),
+                      React.createElement('th',{style:{textAlign:'right',padding:'6px',color:'var(--muted)'}},'Min'),
+                      React.createElement('th',{style:{textAlign:'right',padding:'6px',color:'var(--muted)'}},'Max')
+                    )
+                  ),
+                  React.createElement('tbody',null,
+                    histResults.map(r=>React.createElement('tr',{key:r.batchId},
+                      React.createElement('td',{style:{padding:'6px'}},r.batchId),
+                      React.createElement('td',{style:{padding:'6px'}},r.species),
+                      React.createElement('td',{style:{padding:'6px',textAlign:'right'}},r.count),
+                      React.createElement('td',{style:{padding:'6px',textAlign:'right'}},r.avg),
+                      React.createElement('td',{style:{padding:'6px',textAlign:'right'}},r.min),
+                      React.createElement('td',{style:{padding:'6px',textAlign:'right'}},r.max)
+                    ))
+                  )
+                );
+              })()
+            )
           ),
           React.createElement('div',{className:'card', style:{marginBottom:18}},
             React.createElement('div',{className:'sub'},'Batch Highlights'),
